@@ -1,6 +1,6 @@
 package org.example.authservice.dto;
 
-import org.example.authservice.model.UserAuth;
+import org.example.authservice.model.User;
 import org.mapstruct.*;
 
 @Mapper(
@@ -10,7 +10,7 @@ import org.mapstruct.*;
 )
 public abstract class UserMapper {
     @Mapping(target = "encryptedPassword", source = "password")
-    public abstract UserAuth map(UserAuthDTO dto);
+    public abstract User map(UserAuthDTO dto);
 
-    public abstract UserDTO map(UserAuth model);
+    public abstract UserDTO map(User model);
 }

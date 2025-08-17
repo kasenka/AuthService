@@ -3,8 +3,8 @@ package org.example.authservice.service;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.example.authservice.model.UserAuth;
-import org.example.authservice.repository.UserAuthRepository;
+import org.example.authservice.model.User;
+import org.example.authservice.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -22,7 +22,7 @@ public class JwtService {
     public final long jwtExpirationRefresh = 24 * 60 * 60 * 1000;
 
     @Autowired
-    private UserAuthRepository userRepository;
+    private UserRepository userRepository;
 
     public JwtService(
             @Value("classpath:${jwt.secret}") Resource secretResource
@@ -30,7 +30,7 @@ public class JwtService {
         this.jwtSecret = new String(secretResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
     }
 
-    public String generateAccessToken(UserAuth user){
+    public String generateAccessToken(User user){
         return Jwts.builder()
                 .setSubject(user.getUsername())
                 .claim("id", user.getId())
@@ -40,7 +40,7 @@ public class JwtService {
                 .compact();
     }
 
-    public String generateRefreshToken(UserAuth user){
+    public String generateRefreshToken(User user){
         return Jwts.builder()
                 .setSubject(user.getUsername())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationRefresh))
@@ -57,17 +57,16 @@ public class JwtService {
     }
 
     public boolean isTokenValid(String token) {
+
         final String username = extractUsername(token);
 
         if (userRepository.findByUsername(username).isEmpty()) {return false;}
-        try {
-            Jwts.parserBuilder()
-                    .setSigningKey(jwtSecret.getBytes())
-                    .build()
-                    .parseClaimsJws(token);
-            return true;
-        }catch (Exception e){
-            return false;
-        }
+
+        Jwts.parserBuilder()
+                .setSigningKey(jwtSecret.getBytes())
+                .build()
+                .parseClaimsJws(token);
+        return true;
+
     }
 }

@@ -6,13 +6,11 @@ import org.apache.coyote.BadRequestException;
 import org.example.authservice.dto.UserAuthDTO;
 import org.example.authservice.dto.UserMapper;
 import org.example.authservice.model.Role;
-import org.example.authservice.model.UserAuth;
-import org.example.authservice.repository.RefreshTokenRepository;
-import org.example.authservice.repository.UserAuthRepository;
+import org.example.authservice.model.User;
+import org.example.authservice.repository.UserRepository;
 import org.example.authservice.service.JwtService;
 import org.example.authservice.service.RefreshTokenService;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 //import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,20 +18,21 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
 public class AuthController {
 
-    private UserAuthRepository userRepository;
+    private UserRepository userRepository;
     private UserMapper userMapper;
     private PasswordEncoder passwordEncoder;
     private JwtService jwtService;
     private RefreshTokenService refreshTokenService;
 
-    public AuthController(UserAuthRepository userRepository,
+    public AuthController(UserRepository userRepository,
                           JwtService jwtService,
                           UserMapper userMapper,
                           PasswordEncoder passwordEncoder,
@@ -49,8 +48,11 @@ public class AuthController {
     public ResponseEntity<?> register(@RequestBody @Valid UserAuthDTO userAuthDTO,
                                       BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
+            List<String> errors = bindingResult.getAllErrors().stream()
+                    .map(error -> error.getDefaultMessage())
+                    .collect(Collectors.toList());
             return ResponseEntity.badRequest()
-                    .body(Map.of("error", bindingResult.getAllErrors()));
+                    .body(Map.of("errors", errors));
         }
 
         if(userRepository.findByUsername(userAuthDTO.getUsername()).isPresent()){
@@ -58,7 +60,7 @@ public class AuthController {
                     .body(Map.of("error", "Этот юзернейм уже занят"));
         }
 
-        UserAuth user = userMapper.map(userAuthDTO);
+        User user = userMapper.map(userAuthDTO);
 
         user.setEncryptedPassword(passwordEncoder.encode(userAuthDTO.getPassword()));
         user.setRole(Role.USER);
@@ -73,7 +75,7 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody UserAuthDTO userAuthDTO){
 
         try {
-            UserAuth user = userRepository.findByUsername(userAuthDTO.getUsername())
+            User user = userRepository.findByUsername(userAuthDTO.getUsername())
                     .orElseThrow(() -> new BadRequestException(""));
 
             if (!passwordEncoder.matches(userAuthDTO.getPassword(), user.getEncryptedPassword())) {
@@ -101,7 +103,7 @@ public class AuthController {
     public ResponseEntity<?> refresh(@RequestParam String refreshToken){
         if (refreshTokenService.isValid(refreshToken)){
             String username = refreshTokenService.getUsernameByToken(refreshToken);
-            UserAuth user = userRepository.findByUsername(username).get();
+            User user = userRepository.findByUsername(username).get();
 
             String accessToken = jwtService.generateAccessToken(user);
             return ResponseEntity.ok()
@@ -110,17 +112,10 @@ public class AuthController {
                 .body(Map.of("error", "Невалидный refreshToken"));
     }
 
-
-    @DeleteMapping("/logout")
-    public ResponseEntity<?> logout(@RequestParam String refreshToken) {
-        refreshTokenService.deleteRefreshToken(refreshToken);
-        return ResponseEntity.ok("Logged out");
-    }
-
     @PostMapping("/validate")
     public ResponseEntity<?> validate(@RequestHeader("Authorization") String header){
 
-            if (header == null || !header.startsWith("Bearer ")){
+            if (header == null || !header.startsWith("Bearer ") || header.length() < 8){
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "Access токен в заголовке отсутствует"));
             }
@@ -129,7 +124,7 @@ public class AuthController {
         try{
             if (!jwtService.isTokenValid(token)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("error", "Access токен не валидный"));
+                        .body(Map.of("error", "Некорректный JWT токен"));
             }
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -140,8 +135,14 @@ public class AuthController {
                     .body(Map.of("error", "Access токен просрочен"));
         } catch (io.jsonwebtoken.JwtException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Некорректный JWT токен"));
+                    .body(Map.of("error", "Access токен не валидный"));
         }
+    }
+
+    @DeleteMapping("/logout")
+    public ResponseEntity<?> logout(@RequestParam String refreshToken) {
+        refreshTokenService.deleteRefreshToken(refreshToken);
+        return ResponseEntity.ok("Logged out");
     }
 
 }
