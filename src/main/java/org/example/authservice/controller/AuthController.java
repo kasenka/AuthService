@@ -7,6 +7,7 @@ import org.example.authservice.dto.UserAuthDTO;
 import org.example.authservice.dto.UserMapper;
 import org.example.authservice.model.Role;
 import org.example.authservice.model.User;
+import org.example.authservice.repository.RefreshTokenRepository;
 import org.example.authservice.repository.UserRepository;
 import org.example.authservice.service.JwtService;
 import org.example.authservice.service.RefreshTokenService;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api")
 public class AuthController {
 
+    private final RefreshTokenRepository refreshTokenRepository;
     private UserRepository userRepository;
     private UserMapper userMapper;
     private PasswordEncoder passwordEncoder;
@@ -36,12 +38,13 @@ public class AuthController {
                           JwtService jwtService,
                           UserMapper userMapper,
                           PasswordEncoder passwordEncoder,
-                          RefreshTokenService refreshTokenService) {
+                          RefreshTokenService refreshTokenService, RefreshTokenRepository refreshTokenRepository) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.refreshTokenService = refreshTokenService;
+        this.refreshTokenRepository = refreshTokenRepository;
     }
 
     @PostMapping(value = "/register")
@@ -141,6 +144,10 @@ public class AuthController {
 
     @DeleteMapping("/logout")
     public ResponseEntity<?> logout(@RequestParam String refreshToken) {
+        if (refreshTokenRepository.findByToken(refreshToken).isEmpty()){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Refresh токен не валидный"));
+        }
         refreshTokenService.deleteRefreshToken(refreshToken);
         return ResponseEntity.ok("Logged out");
     }

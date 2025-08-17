@@ -61,13 +61,17 @@ public class AuthControllerTest {
     @Autowired
     private JwtService jwtService;
 
-    String username = "testuser", password = "testpassword";
+    String username = "new", password = "testpassword";
+
+    @Autowired
+    private  RefreshTokenRepository refreshTokenRepository;
 
 
     @AfterEach
-    void clean(){
+    void cleanUsers(){
         userRepository.deleteAll();
     }
+
 
     @Nested
     @DisplayName("Тесты регистрации")
@@ -389,6 +393,20 @@ public class AuthControllerTest {
                     .andDo(print());
 
             assertTrue(refreshTokenRepository.findByToken(loginUserData.get("jwtRefresh").toString()).isEmpty());
+        }
+
+        @Test
+        @DisplayName("Не успешный logout")
+        @Transactional
+        void invalidLogout() throws Exception {
+
+            mockMvc.perform(delete("/api/logout?refreshToken=" + " ")
+                            .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginUserData.get("jwtAccess"))
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpectAll(
+                            status().isBadRequest(),
+                            jsonPath("$.error").value("Refresh токен не валидный"))
+                    .andDo(print());
         }
     }
 }
