@@ -294,9 +294,12 @@ public class AuthControllerTest {
             mockMvc.perform(post("/api/validate")
                             .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginUserData.get("jwtAccess"))
                             .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.username").value(username))
-                    .andDo(print());
+                    .andExpectAll(
+                            status().isOk(),
+                            jsonPath("$.id").exists(),
+                            jsonPath("$.username").value(username),
+                            jsonPath("$.role").value("USER")
+                    ).andDo(print());
 
         }
 

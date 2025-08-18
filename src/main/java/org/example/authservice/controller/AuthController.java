@@ -130,8 +130,10 @@ public class AuthController {
                         .body(Map.of("error", "Некорректный JWT токен"));
             }
 
+            User user = userRepository.findByUsername(jwtService.extractUsername(token)).get();
+
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(Map.of("username", jwtService.extractUsername(token)));
+                    .body(userMapper.map(user));
 
         }catch (io.jsonwebtoken.ExpiredJwtException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
