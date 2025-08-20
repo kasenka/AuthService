@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 
 import org.apache.coyote.BadRequestException;
 import org.example.authservice.dto.UserAuthDTO;
+import org.example.authservice.dto.UserDTO;
 import org.example.authservice.dto.UserMapper;
 import org.example.authservice.model.Role;
 import org.example.authservice.model.User;
@@ -71,7 +72,7 @@ public class AuthController {
         userRepository.save(user);
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(userMapper.map(user));
+                .body(new UserDTO(user));
     }
 
     @PostMapping(value = "/login")
@@ -93,7 +94,7 @@ public class AuthController {
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(Map.of(
-                            "user", userMapper.map(user),
+                            "user", new UserDTO(user),
                             "jwtAccess", jwtAccess,
                             "jwtRefresh", jwtRefresh));
         } catch (BadRequestException ex) {
@@ -133,7 +134,7 @@ public class AuthController {
             User user = userRepository.findByUsername(jwtService.extractUsername(token)).get();
 
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(userMapper.map(user));
+                    .body(new UserDTO(user));
 
         }catch (io.jsonwebtoken.ExpiredJwtException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

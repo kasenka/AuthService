@@ -1,6 +1,7 @@
 package org.example.authservice.model;
 
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -51,4 +52,11 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "friend_id")
     )
     private Set<User> friends = new HashSet<>();
+
+    public User(Long id, String username, String encryptedPassword, Role role) {
+        this.id = id;
+        this.username = username;
+        this.encryptedPassword = encryptedPassword;
+        this.role = role;
+    }
 }

@@ -12,5 +12,5 @@ public abstract class UserMapper {
     @Mapping(target = "encryptedPassword", source = "password")
     public abstract User map(UserAuthDTO dto);
 
-    public abstract UserDTO map(User model);
+//    public abstract UserDTO map(User model);
 }

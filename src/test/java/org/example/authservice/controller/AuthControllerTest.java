@@ -325,7 +325,7 @@ public class AuthControllerTest {
         void invalidJWT(String jwt, HttpStatus status, String error) throws Exception {
             if (jwt.equals("generate")) {
                 jwt = jwtService.generateAccessToken(
-                        new User (9999,"wronguser","wrongpassword", Role.USER));
+                        new User (9999L,"wronguser","wrongpassword", Role.USER));
             }
 
             mockMvc.perform(post("/api/validate")
@@ -371,7 +371,7 @@ public class AuthControllerTest {
         void invalidRefreshToken() throws Exception {
 
             String jwtRefresh = jwtService.generateAccessToken(
-                    new User (9999,"wronguser","wrongpassword", Role.USER));
+                    new User (9999L,"wronguser","wrongpassword", Role.USER));
 
             mockMvc.perform(post("/api/refresh?refreshToken=" + jwtRefresh)
                             .contentType(MediaType.APPLICATION_JSON))
