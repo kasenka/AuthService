@@ -9,6 +9,7 @@ import org.example.authservice.model.RequestStatus;
 import org.example.authservice.model.User;
 import org.example.authservice.repository.FriendRequestRepository;
 import org.example.authservice.repository.UserRepository;
+import org.example.authservice.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,22 +30,24 @@ public class UserController {
     @Autowired
     UserMapper userMapper;
 
+    @Autowired
+    UserService userService;
+
     @GetMapping("")
     public ResponseEntity<?> getAllUsers() {
         return ResponseEntity.status(HttpStatus.OK)
-                .body(userRepository.findAll().stream()
-                        .map(UserDTO::new));
+                .body(userService.getAllUsers());
     }
 
     @GetMapping("/{username}")
     public ResponseEntity<?> getUser(@PathVariable String username) {
          try {
-             User user = userRepository.findByUsername(username).get();
+             UserDTO userDTO = userService.getUser(username);
              return ResponseEntity.status(HttpStatus.OK)
-                     .body(new UserDTO(user));
+                     .body(userDTO);
          }catch (Exception e){
              return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                     .body(Map.of("error", "Юзер не найден"));
+                     .body(Map.of("error", e.getMessage()));
          }
     }
 
@@ -52,73 +55,43 @@ public class UserController {
     public ResponseEntity<?> getAllFriendRequests(@RequestHeader(name = "X-User-Username") String username,
                                                   @RequestParam String side) {
         try {
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new NoSuchElementException(""));
+            List<FriendRequestDTO> friendRequestDTOS = userService.getAllFriendRequests(username,side);
 
-            List<FriendRequest> friendRequest = new ArrayList<>();
-            switch (side){
-                case "receiver" ->
-                        friendRequest = friendRequestRepository.findAllByReceiverId(user.getId());
-                case "sender" ->
-                        friendRequest = friendRequestRepository.findAllBySenderId(user.getId());
-            }
-
-            if (friendRequest.isEmpty()){
+            if (friendRequestDTOS.isEmpty()){
                 return ResponseEntity.status(HttpStatus.OK)
                         .body("У Вас пока нет заявок в друзья");
             }
 
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(friendRequest.stream()
-                            .map(fr -> new FriendRequestDTO(fr))
-                            .toList());
+                    .body(friendRequestDTOS);
 
         }catch (NoSuchElementException e){
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "Юзер не найден"));
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
     @PostMapping("/friendrequests/{recipient}") // отправить заявку
     public ResponseEntity<?> sendFriendRequest(@RequestHeader(name = "X-User-Username") String senderUsername,
                                                @PathVariable(name = "recipient") String recipientUsername) {
-        if (userRepository.findByUsername(recipientUsername).isEmpty()){
-            System.out.println(recipientUsername);
-            System.out.println(userRepository.findByUsername(recipientUsername));
+        try{
+            if (userService.sendFriendRequest(senderUsername, recipientUsername)) {
+                return ResponseEntity.status(HttpStatus.CREATED)
+                        .body("Ваша заявка отправлена");
+            }
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", "Ваша заявка не была сохранена, попробуйте еще раз"));
 
+        } catch (NoSuchElementException e){
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "Получатель не найден"));
-        }
-
-        User senderUser = userRepository.findByUsername(senderUsername).get();
-        User recipientUser = userRepository.findByUsername(recipientUsername).get();
-
-        Optional<FriendRequest> friendRequest = friendRequestRepository.findBySenderIdAndReceiverId(
-                senderUser.getId(), recipientUser.getId());
-
-        if (friendRequest.isPresent() && friendRequest.get().getStatus().equals(RequestStatus.PENDING)){
+                    .body(Map.of("error", e.getMessage()));
+        } catch (IllegalArgumentException e){
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", "Запрос дружбы уже создан, ожидайте подтверждения"));
-        }
-
-        Optional<FriendRequest> reversedFriendRequest = friendRequestRepository.findBySenderIdAndReceiverId(
-                recipientUser.getId(), senderUser.getId());
-
-        if (reversedFriendRequest.isPresent() && reversedFriendRequest.get().getStatus().equals(RequestStatus.PENDING)){
+                    .body(Map.of("error", e.getMessage()));
+        } catch (IllegalStateException e){
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", "Вам уже отправлен запрос дружбы от этого пользователя"));
+                    .body(Map.of("error", e.getMessage()));
         }
-
-        if (senderUser.getFriends().contains(recipientUser)){
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", "Этот пользователь уже Ваш друг"));
-        }
-
-        FriendRequest friendRequestToSend = new FriendRequest(senderUser, recipientUser, RequestStatus.PENDING);
-        friendRequestRepository.save(friendRequestToSend);
-
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body("Ваша заявка отправлена");
     }
 
     @Transactional
@@ -126,25 +99,56 @@ public class UserController {
     public ResponseEntity<?> updateFriendRequest(@RequestHeader(name = "X-User-Username") String recipientUsername,
                                                  @PathVariable(name = "sender") String senderUsername,
                                                  @RequestParam(name = "status") RequestStatus status){
-        User sender = userRepository.findByUsername(senderUsername).get();
-        User receiver = userRepository.findByUsername(recipientUsername).get();
-
-        Optional<FriendRequest> friendRequest = friendRequestRepository.findBySenderIdAndReceiverId(
-                sender.getId(), receiver.getId());
-
-        if (status.equals(RequestStatus.ACCEPTED)){
-                sender.getFriends().add(receiver);
-                receiver.getFriends().add(sender);
+        try {
+            if (userService.updateFriendRequest(recipientUsername, senderUsername, status)) {
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body("Статус заявки обновлен");
+            }
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Статус заявки не обновлен, ошибка");
+        }catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()));
         }
-        sender.getSendRequests().remove(friendRequest.get());
-        receiver.getReceivedRequests().remove(friendRequest.get());
+    }
 
-        userRepository.save(sender);
-        userRepository.save(receiver);
+    @GetMapping("/friends")
+    public ResponseEntity<?> getAllFriends(@RequestHeader(name = "X-User-Username") String username){
 
-        friendRequestRepository.delete(friendRequest.get());
+        try{
+            Set<User> friends = userService.getAllFriends(username);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body("Статус заявки обновлен");
+            if (friends.isEmpty()){
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body("У Вас пока нет друзей");
+            }
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(friends);
+
+        }catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @Transactional
+    @DeleteMapping("/friends/{username}")
+    public ResponseEntity<?> deleteFriend(@RequestHeader(name = "X-User-Username") String userUsername,
+                                          @PathVariable(name = "username") String friendUsername){
+        try{
+            if (userService.deleteFriend(userUsername, friendUsername)){
+                return ResponseEntity.status(HttpStatus.NO_CONTENT)
+                        .body("Этот пользователь удален из ваших друзей");
+            }return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Не удалось удалить пользователя из ваших друзей");
+
+        }catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (IllegalStateException e){
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", e.getMessage()));
+        }
+
     }
 }
