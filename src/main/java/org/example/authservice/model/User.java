@@ -42,7 +42,7 @@ public class User {
     @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FriendRequest> sendRequests = new ArrayList<>();
 
-    @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "recipient", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FriendRequest> receivedRequests = new ArrayList<>();
 
     @ManyToMany
@@ -55,6 +55,12 @@ public class User {
 
     public User(Long id, String username, String encryptedPassword, Role role) {
         this.id = id;
+        this.username = username;
+        this.encryptedPassword = encryptedPassword;
+        this.role = role;
+    }
+
+    public User(String username, String encryptedPassword, Role role) {
         this.username = username;
         this.encryptedPassword = encryptedPassword;
         this.role = role;

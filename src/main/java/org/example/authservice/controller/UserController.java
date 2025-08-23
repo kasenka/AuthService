@@ -6,6 +6,7 @@ import org.example.authservice.dto.UserDTO;
 import org.example.authservice.dto.UserMapper;
 import org.example.authservice.model.FriendRequest;
 import org.example.authservice.model.RequestStatus;
+import org.example.authservice.model.Side;
 import org.example.authservice.model.User;
 import org.example.authservice.repository.FriendRequestRepository;
 import org.example.authservice.repository.UserRepository;
@@ -36,7 +37,7 @@ public class UserController {
     @GetMapping("")
     public ResponseEntity<?> getAllUsers() {
         return ResponseEntity.status(HttpStatus.OK)
-                .body(userService.getAllUsers());
+                .body(Map.of("users",userService.getAllUsers()));
     }
 
     @GetMapping("/{username}")
@@ -53,13 +54,13 @@ public class UserController {
 
     @GetMapping("/friendrequests/side") // посмотреть все заявки юзера как receiver/sender
     public ResponseEntity<?> getAllFriendRequests(@RequestHeader(name = "X-User-Username") String username,
-                                                  @RequestParam String side) {
+                                                  @RequestParam Side side) {
         try {
             List<FriendRequestDTO> friendRequestDTOS = userService.getAllFriendRequests(username,side);
 
             if (friendRequestDTOS.isEmpty()){
                 return ResponseEntity.status(HttpStatus.OK)
-                        .body("У Вас пока нет заявок в друзья");
+                        .body(Map.of("message","У Вас пока нет заявок в друзья"));
             }
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -77,7 +78,7 @@ public class UserController {
         try{
             if (userService.sendFriendRequest(senderUsername, recipientUsername)) {
                 return ResponseEntity.status(HttpStatus.CREATED)
-                        .body("Ваша заявка отправлена");
+                        .body(Map.of("message","Ваша заявка отправлена"));
             }
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("error", "Ваша заявка не была сохранена, попробуйте еще раз"));
@@ -102,10 +103,10 @@ public class UserController {
         try {
             if (userService.updateFriendRequest(recipientUsername, senderUsername, status)) {
                 return ResponseEntity.status(HttpStatus.OK)
-                        .body("Статус заявки обновлен");
+                        .body(Map.of("message","Статус заявки обновлен"));
             }
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("Статус заявки не обновлен, ошибка");
+                    .body(Map.of("error","Статус заявки не обновлен, ошибка"));
         }catch (NoSuchElementException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", e.getMessage()));
@@ -120,7 +121,7 @@ public class UserController {
 
             if (friends.isEmpty()){
                 return ResponseEntity.status(HttpStatus.OK)
-                        .body("У Вас пока нет друзей");
+                        .body(Map.of("message","У Вас пока нет друзей"));
             }
             return ResponseEntity.status(HttpStatus.OK)
                     .body(friends);
@@ -138,9 +139,9 @@ public class UserController {
         try{
             if (userService.deleteFriend(userUsername, friendUsername)){
                 return ResponseEntity.status(HttpStatus.NO_CONTENT)
-                        .body("Этот пользователь удален из ваших друзей");
+                        .body(Map.of("message","Этот пользователь удален из ваших друзей"));
             }return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("Не удалось удалить пользователя из ваших друзей");
+                    .body(Map.of("error","Не удалось удалить пользователя из ваших друзей"));
 
         }catch (NoSuchElementException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

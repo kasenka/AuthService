@@ -6,6 +6,7 @@ import org.example.authservice.dto.UserDTO;
 import org.example.authservice.dto.UserMapper;
 import org.example.authservice.model.FriendRequest;
 import org.example.authservice.model.RequestStatus;
+import org.example.authservice.model.Side;
 import org.example.authservice.model.User;
 import org.example.authservice.repository.FriendRequestRepository;
 import org.example.authservice.repository.UserRepository;
@@ -40,15 +41,15 @@ public class UserService {
         return new UserDTO(user);
     }
 
-    public List<FriendRequestDTO> getAllFriendRequests(String username, String side) {
+    public List<FriendRequestDTO> getAllFriendRequests(String username, Side side) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new NoSuchElementException("Юзер не найден"));
 
         List<FriendRequest> friendRequest = new ArrayList<>();
         switch (side){
-            case "receiver" ->
-                    friendRequest = friendRequestRepository.findAllByReceiverId(user.getId());
-            case "sender" ->
+            case RESIPIENT ->
+                    friendRequest = friendRequestRepository.findAllByRecipientId(user.getId());
+            case SENDER ->
                     friendRequest = friendRequestRepository.findAllBySenderId(user.getId());
         }
 
@@ -68,14 +69,14 @@ public class UserService {
             throw new IllegalArgumentException("Нельзя отправить заявку самому себе");
         }
 
-        friendRequestRepository.findBySenderIdAndReceiverId(
+        friendRequestRepository.findBySenderIdAndRecipientId(
                 senderUser.getId(), recipientUser.getId())
                 .filter(fr -> fr.getStatus().equals(RequestStatus.PENDING))
                 .ifPresent(fr -> {
                     throw new IllegalStateException("Запрос дружбы уже создан, ожидайте подтверждения");
                 });
 
-        friendRequestRepository.findBySenderIdAndReceiverId(
+        friendRequestRepository.findBySenderIdAndRecipientId(
                 recipientUser.getId(), senderUser.getId())
                 .filter(fr -> fr.getStatus().equals(RequestStatus.PENDING))
                 .ifPresent(fr -> {
@@ -89,7 +90,7 @@ public class UserService {
         FriendRequest friendRequestToSend = new FriendRequest(senderUser, recipientUser, RequestStatus.PENDING);
         friendRequestRepository.save(friendRequestToSend);
 
-        if (friendRequestRepository.findBySenderIdAndReceiverId(
+        if (friendRequestRepository.findBySenderIdAndRecipientId(
                 senderUser.getId(),recipientUser.getId())
                 .isPresent()) {return true;}
         return false;
@@ -101,7 +102,7 @@ public class UserService {
         User receiver = userRepository.findByUsername(recipientUsername)
                 .orElseThrow(() -> new NoSuchElementException("Получатель не найден"));
 
-        FriendRequest friendRequest = friendRequestRepository.findBySenderIdAndReceiverId(
+        FriendRequest friendRequest = friendRequestRepository.findBySenderIdAndRecipientId(
                 sender.getId(), receiver.getId())
                 .orElseThrow(() -> new NoSuchElementException("Заявка не найдена"));
 
@@ -117,7 +118,7 @@ public class UserService {
 
         friendRequestRepository.delete(friendRequest);
 
-        if (!friendRequestRepository.findBySenderIdAndReceiverId(
+        if (!friendRequestRepository.findBySenderIdAndRecipientId(
                         sender.getId(),receiver.getId()).isPresent()) {
             return true;}
         return false;
@@ -131,8 +132,6 @@ public class UserService {
         return friends;
     }
 
-    @Transactional
-    @DeleteMapping("/friends/{username}")
     public boolean deleteFriend(String userUsername, String friendUsername){
         User user = userRepository.findByUsername(userUsername)
                 .orElseThrow(() -> new NoSuchElementException("Юзер не найден"));

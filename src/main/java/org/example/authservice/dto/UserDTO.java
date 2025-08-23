@@ -27,7 +27,7 @@ public class UserDTO {
         this.username = user.getUsername();
         this.role = user.getRole();
         this.sendRequests = user.getSendRequests().stream()
-                .map(r -> r.getReceiver().getUsername())
+                .map(r -> r.getRecipient().getUsername())
                 .toList();
         this.receivedRequests = user.getReceivedRequests().stream()
                 .map(r -> r.getSender().getUsername())

@@ -10,12 +10,12 @@ import org.example.authservice.model.User;
 @Setter
 public class FriendRequestDTO {
     private String sender;
-    private String receiver;
+    private String recipient;
     private RequestStatus status;
 
     public FriendRequestDTO(FriendRequest friendRequest) {
         this.sender = friendRequest.getSender().getUsername();
-        this.receiver = friendRequest.getReceiver().getUsername();
+        this.recipient = friendRequest.getRecipient().getUsername();
         this.status = friendRequest.getStatus();
     }
 }

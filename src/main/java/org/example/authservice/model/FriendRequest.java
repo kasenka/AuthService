@@ -19,9 +19,9 @@ import lombok.Setter;
 @NoArgsConstructor
 public class FriendRequest {
 
-    public FriendRequest(User sender, User receiver, RequestStatus status) {
+    public FriendRequest(User sender, User recipient, RequestStatus status) {
         this.sender = sender;
-        this.receiver = receiver;
+        this.recipient = recipient;
         this.status = status;
     }
 
@@ -37,9 +37,9 @@ public class FriendRequest {
 
     // кому отправлена заявка
     @ManyToOne
-    @JoinColumn(name = "receiver_id", nullable = false)
+    @JoinColumn(name = "recipient_id", nullable = false)
     @JsonIgnore
-    private User receiver;
+    private User recipient;
 
     @Enumerated(EnumType.STRING)
     private RequestStatus status;
