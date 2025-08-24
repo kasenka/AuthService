@@ -117,7 +117,7 @@ public class UserController {
     public ResponseEntity<?> getAllFriends(@RequestHeader(name = "X-User-Username") String username){
 
         try{
-            Set<User> friends = userService.getAllFriends(username);
+            Set<String> friends = userService.getAllFriends(username);
 
             if (friends.isEmpty()){
                 return ResponseEntity.status(HttpStatus.OK)

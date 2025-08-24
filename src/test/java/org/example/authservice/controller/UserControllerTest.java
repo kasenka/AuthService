@@ -284,6 +284,95 @@ public class UserControllerTest {
                     .andReturn();
         }
 
+        @Test
+        @DisplayName("Успешное получение друзей")
+        void getAllFriends() throws Exception {
+            String haveFriends = "sender";
+
+            mockMvc.perform(get("/api/users/friends")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .header("X-User-Username", haveFriends))
+                    .andExpectAll(
+                            status().isOk(),
+                            jsonPath("$.[0]").value("friend")
+                    )
+                    .andDo(print())
+                    .andReturn();
+
+            String noFriends = "recipient";
+
+            mockMvc.perform(get("/api/users/friends")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .header("X-User-Username", noFriends))
+                    .andExpectAll(
+                            status().isOk(),
+                            jsonPath("$.message").value("У Вас пока нет друзей")
+                    )
+                    .andDo(print())
+                    .andReturn();
+        }
+
+        @Test
+        @DisplayName("Не успешное получение друзей (юзер не найден)")
+        void invalidGetAllFriends() throws Exception {
+            String username = "someusername";
+
+            mockMvc.perform(get("/api/users/friends")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .header("X-User-Username", username))
+                    .andExpectAll(
+                            status().isNotFound(),
+                            jsonPath("$.error").value("Юзер не найден")
+                    )
+                    .andDo(print())
+                    .andReturn();
+        }
+
+        @Test
+        @DisplayName("Успешное удаление друга")
+        void deleteFriend() throws Exception {
+            String username = "friend";
+            String user = "sender";
+
+            mockMvc.perform(delete("/api/users/friends/" + username)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .header("X-User-Username", user))
+                    .andExpectAll(
+                            status().isNoContent(),
+                            jsonPath("$.message").value("Этот пользователь удален из ваших друзей")
+                    )
+                    .andDo(print())
+                    .andReturn();
+        }
+
+        static Stream<Arguments> argumentsInvalidDeleteFriend(){
+            return Stream.of(
+                    Arguments.of("wrongsender","friend",HttpStatus.NOT_FOUND,
+                            "Юзер не найден"),
+                    Arguments.of("sender","wrongfriend",HttpStatus.NOT_FOUND,
+                            "Друг не найден"),
+                    Arguments.of("sender","recipient",HttpStatus.CONFLICT,
+                            "Этого пользователя нет у Вас в друзьях")
+            );
+        }
+
+        @ParameterizedTest(name = "[{index}] {3}")
+        @MethodSource("argumentsInvalidDeleteFriend")
+        @DisplayName("Не успешное удаление друга")
+        void invalidDeleteFriend(String userUsername, String friendUsername,HttpStatus status,
+                                 String error) throws Exception {
+
+            mockMvc.perform(delete("/api/users/friends/" + friendUsername)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .header("X-User-Username", userUsername))
+                    .andExpectAll(
+                            status().is(status.value()),
+                            jsonPath("$.error").value(error)
+                    )
+                    .andDo(print())
+                    .andReturn();
+        }
+
     }
 
 }

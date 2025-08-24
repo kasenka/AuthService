@@ -124,10 +124,10 @@ public class UserService {
         return false;
     }
 
-    public Set<User> getAllFriends(String username){
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new NoSuchElementException("Юзер не найден"));
-        Set<User> friends = user.getFriends();
+    public Set<String> getAllFriends(String username){
+        UserDTO userDTO = new UserDTO(userRepository.findByUsername(username)
+                .orElseThrow(() -> new NoSuchElementException("Юзер не найден")));
+        Set<String> friends = userDTO.getFriends();
 
         return friends;
     }
@@ -136,19 +136,20 @@ public class UserService {
         User user = userRepository.findByUsername(userUsername)
                 .orElseThrow(() -> new NoSuchElementException("Юзер не найден"));
 
-        if (!user.getFriends().contains(friendUsername)){
+        User friend = userRepository.findByUsername(friendUsername)
+                .orElseThrow(() -> new NoSuchElementException("Друг не найден"));
+
+        if (!user.getFriends().contains(friend)){
             throw new IllegalStateException("Этого пользователя нет у Вас в друзьях");
         }
 
-        User friend = userRepository.findByUsername(friendUsername)
-                .orElseThrow(() -> new NoSuchElementException("Юзер не найден"));
-        user.getFriends().remove(friendUsername);
-        friend.getFriends().remove(userUsername);
+        user.getFriends().remove(friend);
+        friend.getFriends().remove(user);
 
         userRepository.save(user);
         userRepository.save(friend);
 
-        if (!user.getFriends().contains(friendUsername) && !friend.getFriends().contains(userUsername)) {return true;}
+        if (!user.getFriends().contains(friend) && !friend.getFriends().contains(user)) {return true;}
         return false;
     }
 }
