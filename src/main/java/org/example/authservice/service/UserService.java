@@ -47,7 +47,7 @@ public class UserService {
 
         List<FriendRequest> friendRequest = new ArrayList<>();
         switch (side){
-            case RESIPIENT ->
+            case RECIPIENT ->
                     friendRequest = friendRequestRepository.findAllByRecipientId(user.getId());
             case SENDER ->
                     friendRequest = friendRequestRepository.findAllBySenderId(user.getId());

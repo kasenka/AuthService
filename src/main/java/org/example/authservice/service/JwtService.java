@@ -18,7 +18,7 @@ import java.util.Date;
 public class JwtService {
 
     private final String jwtSecret;
-    public final long jwtExpirationAccess = 1 * 60 * 1000;
+    public final long jwtExpirationAccess = 15 * 60 * 1000;
     public final long jwtExpirationRefresh = 24 * 60 * 60 * 1000;
 
     @Autowired

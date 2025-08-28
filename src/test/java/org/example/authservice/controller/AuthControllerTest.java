@@ -294,9 +294,7 @@ public class AuthControllerTest {
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpectAll(
                             status().isOk(),
-                            jsonPath("$.id").exists(),
-                            jsonPath("$.username").value(username),
-                            jsonPath("$.role").value("USER")
+                            jsonPath("$.username").value(username)
                     ).andDo(print());
 
         }

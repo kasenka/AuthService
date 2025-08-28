@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/auth")
 public class AuthController {
 
     private final RefreshTokenRepository refreshTokenRepository;
@@ -134,7 +134,7 @@ public class AuthController {
             User user = userRepository.findByUsername(jwtService.extractUsername(token)).get();
 
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(new UserDTO(user));
+                    .body(Map.of("username",user.getUsername()));
 
         }catch (io.jsonwebtoken.ExpiredJwtException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
