@@ -1,13 +1,10 @@
 package org.example.authservice.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.authservice.model.RequestStatus;
 import org.example.authservice.model.Role;
 import org.example.authservice.model.Side;
 import org.example.authservice.model.User;
 import org.example.authservice.repository.UserRepository;
-import org.example.authservice.service.JwtService;
-import org.example.authservice.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -186,7 +183,7 @@ public class UserControllerTest {
         void getFriendRequest() throws Exception {
             String username = "sender";
 
-            mockMvc.perform(get("/api/users/friendrequests/side?side=" + Side.RESIPIENT)
+            mockMvc.perform(get("/api/users/friendrequests/side?side=" + Side.RECIPIENT)
                             .contentType(MediaType.APPLICATION_JSON)
                             .header("X-User-Username", username))
                     .andExpectAll(
@@ -213,7 +210,7 @@ public class UserControllerTest {
         void invalidGetFriendRequest() throws Exception {
             String username = "wrongusername";
 
-            mockMvc.perform(get("/api/users/friendrequests/side?side=" + Side.RESIPIENT)
+            mockMvc.perform(get("/api/users/friendrequests/side?side=" + Side.RECIPIENT)
                             .contentType(MediaType.APPLICATION_JSON)
                             .header("X-User-Username", username))
                     .andExpectAll(
@@ -334,7 +331,7 @@ public class UserControllerTest {
             String username = "friend";
             String user = "sender";
 
-            mockMvc.perform(delete("/api/users/friends/" + username)
+            mockMvc.perform(delete("/api/users/friends/delete" + username)
                             .contentType(MediaType.APPLICATION_JSON)
                             .header("X-User-Username", user))
                     .andExpectAll(
@@ -362,7 +359,7 @@ public class UserControllerTest {
         void invalidDeleteFriend(String userUsername, String friendUsername,HttpStatus status,
                                  String error) throws Exception {
 
-            mockMvc.perform(delete("/api/users/friends/" + friendUsername)
+            mockMvc.perform(delete("/api/users/friends/delete" + friendUsername)
                             .contentType(MediaType.APPLICATION_JSON)
                             .header("X-User-Username", userUsername))
                     .andExpectAll(
@@ -372,7 +369,6 @@ public class UserControllerTest {
                     .andDo(print())
                     .andReturn();
         }
-
     }
 
 }

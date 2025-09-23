@@ -30,6 +30,9 @@ public class UserService {
     @Autowired
     UserMapper userMapper;
 
+    @Autowired
+    UserEventProducer userEventProducer;
+
     public List<UserDTO> getAllUsers() {
         return userRepository.findAll().stream()
                 .map(UserDTO::new).toList();
@@ -151,5 +154,18 @@ public class UserService {
 
         if (!user.getFriends().contains(friend) && !friend.getFriends().contains(user)) {return true;}
         return false;
+    }
+
+    public boolean deleteUser(String userUsername){
+        User user = userRepository.findByUsername(userUsername)
+                .orElseThrow(() -> new NoSuchElementException("Юзер не найден"));
+
+        userRepository.delete(user);
+
+        if (userRepository.findByUsername(userUsername).isEmpty()) {
+            userEventProducer.sendUserDeletedEvent(user.getUsername());
+            return true;
+        }
+        return true;
     }
 }

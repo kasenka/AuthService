@@ -13,5 +13,54 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
 
+#  kafka:
+#    bootstrap-servers: localhost:29092,localhost:39092,localhost:49092
+#    producer:
+#      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+#      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+#    consumer:
+#      group-id: my-consumer-group
+#      auto-offset-reset: earliest
+#      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+#      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+#    admin:
+#      auto-create: true
+#      properties:
+#        default.replication.factor: 1
+#        num.partitions: 3
+#    properties:
+#      # Дополнительные свойства Kafka
+#      security.protocol: PLAINTEXT
+#      session.timeout.ms: 10000
+#      request.timeout.ms: 30000
+#
+#  # Настройки для автоматического создания топиков
+#
+#topics:
+#  - name: user-delete-events
+#    partitions: 3
+#    replication-factor: 1
+#
+#  # Логирование для отладки
+#logging:
+#  level:
+#    org.apache.kafka: INFO
+#    org.springframework.kafka: INFO
+#
+
+
 jwt:
   secret: jwt.key
+
+#
+#  akosenko@MacBook-Air--Dasha weather_kafka % rm -rf /tmp/kafka-logs/*
+#
+#zsh: sure you want to delete all the files in /tmp/kafka-logs [yn]? y
+#zsh: no matches found: /tmp/kafka-logs/*
+#  (base) dashakosenko@MacBook-Air--Dasha weather_kafka % kafka-storage random-uuid
+#
+#  vN22JuLARI6-kkHSz828_w
+#  (base) dashakosenko@MacBook-Air--Dasha weather_kafka % kafka-storage format --config /opt/homebrew/etc/kafka/server.properties --cluster-id vN22JuLARI6-kkHSz828_w
+#
+#  Formatting metadata directory /tmp/kafka-logs with metadata.version 4.0-IV3.
+#  (base) dashakosenko@MacBook-Air--Dasha weather_kafka % brew services restart kafka

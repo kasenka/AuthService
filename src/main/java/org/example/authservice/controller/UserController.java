@@ -8,6 +8,7 @@ import org.example.authservice.model.RequestStatus;
 import org.example.authservice.model.Side;
 import org.example.authservice.repository.FriendRequestRepository;
 import org.example.authservice.repository.UserRepository;
+import org.example.authservice.service.UserEventProducer;
 import org.example.authservice.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -31,6 +32,9 @@ public class UserController {
 
     @Autowired
     UserService userService;
+
+    @Autowired
+    UserEventProducer userEventProducer;
 
     @GetMapping("")
     public ResponseEntity<?> getAllUsers() {
@@ -131,7 +135,7 @@ public class UserController {
     }
 
     @Transactional
-    @DeleteMapping("/friends/{username}")
+    @DeleteMapping("/friends/{username}/delete")
     public ResponseEntity<?> deleteFriend(@RequestHeader(name = "X-User-Username") String userUsername,
                                           @PathVariable(name = "username") String friendUsername){
         try{
@@ -144,10 +148,24 @@ public class UserController {
         }catch (NoSuchElementException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", e.getMessage()));
-        } catch (IllegalStateException e){
+        }catch (IllegalStateException e){
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("error", e.getMessage()));
         }
+    }
 
+    @DeleteMapping("/delete")
+    public ResponseEntity<?> deleteUser(@RequestHeader(name = "X-User-Username") String userUsername){
+        try{
+            if (userService.deleteUser(userUsername)){
+                return ResponseEntity.status(HttpStatus.NO_CONTENT)
+                        .body(Map.of("message","Этот пользователь удален"));
+            }return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error","Не удалось удалить пользователя"));
+
+        }catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()));
+        }
     }
 }
