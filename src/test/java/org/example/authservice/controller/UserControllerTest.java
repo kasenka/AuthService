@@ -109,6 +109,36 @@ public class UserControllerTest {
                 .andReturn();
     }
 
+    @Test
+    @DisplayName("Успешное удаление юзера")
+    void deleteFriend() throws Exception {
+
+        mockMvc.perform(delete("/api/users/delete")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("X-User-Username", "user1"))
+                .andExpectAll(
+                        status().isNoContent(),
+                        jsonPath("$.message").value("Этот пользователь удален")
+                )
+                .andDo(print())
+                .andReturn();
+    }
+
+    @Test
+    @DisplayName("Не успешное удаление юзера (юзер не найден)")
+    void invalidDeleteFriend() throws Exception {
+
+        mockMvc.perform(delete("/api/users/delete")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("X-User-Username", "wronguser"))
+                .andExpectAll(
+                        status().isNotFound(),
+                        jsonPath("$.error").value("Юзер не найден")
+                )
+                .andDo(print())
+                .andReturn();
+    }
+
     @Nested
     @DisplayName("Тесты заявок в друзья")
     class Friendship{
@@ -331,7 +361,7 @@ public class UserControllerTest {
             String username = "friend";
             String user = "sender";
 
-            mockMvc.perform(delete("/api/users/friends/delete" + username)
+            mockMvc.perform(delete("/api/users/friends/" + username + "/delete")
                             .contentType(MediaType.APPLICATION_JSON)
                             .header("X-User-Username", user))
                     .andExpectAll(
@@ -359,7 +389,7 @@ public class UserControllerTest {
         void invalidDeleteFriend(String userUsername, String friendUsername,HttpStatus status,
                                  String error) throws Exception {
 
-            mockMvc.perform(delete("/api/users/friends/delete" + friendUsername)
+            mockMvc.perform(delete("/api/users/friends/" + friendUsername + "/delete")
                             .contentType(MediaType.APPLICATION_JSON)
                             .header("X-User-Username", userUsername))
                     .andExpectAll(

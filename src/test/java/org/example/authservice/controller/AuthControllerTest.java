@@ -81,7 +81,7 @@ public class AuthControllerTest {
 
             UserAuthDTO userAuthDTO = new UserAuthDTO(username, password);
 
-            MvcResult result = mockMvc.perform(post("/api/register")
+            MvcResult result = mockMvc.perform(post("/api/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(userAuthDTO)))
                     .andExpectAll(
@@ -112,7 +112,7 @@ public class AuthControllerTest {
 
             UserAuthDTO userAuthDTO = new UserAuthDTO(username, password);
 
-            MvcResult result = mockMvc.perform(post("/api/register")
+            MvcResult result = mockMvc.perform(post("/api/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(userAuthDTO)))
                     .andExpectAll(
@@ -132,7 +132,7 @@ public class AuthControllerTest {
             UserAuthDTO user1 = new UserAuthDTO("testusername1", "testpassword1");
             UserAuthDTO user2 = new UserAuthDTO("testusername1", "testpassword1");
 
-            MvcResult result1 = mockMvc.perform(post("/api/register")
+            MvcResult result1 = mockMvc.perform(post("/api/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(user1)))
                     .andExpectAll(
@@ -145,7 +145,7 @@ public class AuthControllerTest {
                     .andDo(print())
                     .andReturn();
 
-            MvcResult result2 = mockMvc.perform(post("/api/register")
+            MvcResult result2 = mockMvc.perform(post("/api/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(user2)))
                     .andExpectAll(
@@ -165,7 +165,7 @@ public class AuthControllerTest {
         void setUpRegister() throws Exception {
             UserAuthDTO userAuthDTO = new UserAuthDTO(username, password);
 
-            mockMvc.perform(post("/api/register")
+            mockMvc.perform(post("/api/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(userAuthDTO)))
                     .andExpectAll(
@@ -182,7 +182,7 @@ public class AuthControllerTest {
 
             UserAuthDTO userAuthDTO = new UserAuthDTO(username, password);
 
-            MvcResult resultLogin = mockMvc.perform(post("/api/login")
+            MvcResult resultLogin = mockMvc.perform(post("/api/auth/login")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(userAuthDTO)))
                     .andExpectAll(
@@ -227,7 +227,7 @@ public class AuthControllerTest {
         @DisplayName("Неверный юзернейм или пароль")
         void invalidLoginData(UserAuthDTO userAuthDTO, String message) throws Exception {
 
-            MvcResult result = mockMvc.perform(post("/api/login")
+            MvcResult result = mockMvc.perform(post("/api/auth/login")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(userAuthDTO)))
                     .andExpectAll(
@@ -253,7 +253,7 @@ public class AuthControllerTest {
         void setUpLogin() throws Exception {
             UserAuthDTO userAuthDTO = new UserAuthDTO(username, password);
 
-            mockMvc.perform(post("/api/register")
+            mockMvc.perform(post("/api/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(userAuthDTO)))
                     .andExpectAll(
@@ -264,7 +264,7 @@ public class AuthControllerTest {
                                     .value("USER"));
 
 
-            MvcResult resultLogin = mockMvc.perform(post("/api/login")
+            MvcResult resultLogin = mockMvc.perform(post("/api/auth/login")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(userAuthDTO)))
                     .andExpectAll(
@@ -286,10 +286,10 @@ public class AuthControllerTest {
         }
 
         @Test
-        @DisplayName("Успешный переход по пути /api/validate")
+        @DisplayName("Успешный переход по пути /api/auth/validate")
         void getValidate() throws Exception {
 
-            mockMvc.perform(post("/api/validate")
+            mockMvc.perform(post("/api/auth/validate")
                             .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginUserData.get("jwtAccess"))
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpectAll(
@@ -317,14 +317,14 @@ public class AuthControllerTest {
 
         @ParameterizedTest(name = "[{index}] {2}")
         @MethodSource("wrongJWT")
-        @DisplayName("Не успешный переход по пути /api/validate")
+        @DisplayName("Не успешный переход по пути /api/auth/validate")
         void invalidJWT(String jwt, HttpStatus status, String error) throws Exception {
             if (jwt.equals("generate")) {
                 jwt = jwtService.generateAccessToken(
                         new User (9999L,"wronguser","wrongpassword", Role.USER));
             }
 
-            mockMvc.perform(post("/api/validate")
+            mockMvc.perform(post("/api/auth/validate")
                             .header(HttpHeaders.AUTHORIZATION,
                                     "Bearer " + jwt)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -342,7 +342,7 @@ public class AuthControllerTest {
 
             String jwtRefresh = loginUserData.get("jwtRefresh").toString();
 
-            MvcResult result = mockMvc.perform(post("/api/refresh?refreshToken=" + jwtRefresh)
+            MvcResult result = mockMvc.perform(post("/api/auth/refresh?refreshToken=" + jwtRefresh)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpectAll(
                             status().isOk(),
@@ -350,7 +350,7 @@ public class AuthControllerTest {
                     .andDo(print())
                     .andReturn();
 
-            mockMvc.perform(post("/api/validate")
+            mockMvc.perform(post("/api/auth/validate")
                             .header(HttpHeaders.AUTHORIZATION,
                                     "Bearer " +
                                             objectMapper.readValue(result.getResponse().getContentAsString(), Map.class)
@@ -369,7 +369,7 @@ public class AuthControllerTest {
             String jwtRefresh = jwtService.generateAccessToken(
                     new User (9999L,"wronguser","wrongpassword", Role.USER));
 
-            mockMvc.perform(post("/api/refresh?refreshToken=" + jwtRefresh)
+            mockMvc.perform(post("/api/auth/refresh?refreshToken=" + jwtRefresh)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpectAll(
                             status().isNotFound(),
@@ -383,7 +383,7 @@ public class AuthControllerTest {
         @Transactional
         void successfulLogout() throws Exception {
 
-            mockMvc.perform(delete("/api/logout?refreshToken=" + loginUserData.get("jwtRefresh"))
+            mockMvc.perform(delete("/api/auth/logout?refreshToken=" + loginUserData.get("jwtRefresh"))
                             .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginUserData.get("jwtAccess"))
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpectAll(
@@ -399,7 +399,7 @@ public class AuthControllerTest {
         @Transactional
         void invalidLogout() throws Exception {
 
-            mockMvc.perform(delete("/api/logout?refreshToken=" + " ")
+            mockMvc.perform(delete("/api/auth/logout?refreshToken=" + " ")
                             .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginUserData.get("jwtAccess"))
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpectAll(
